@@ -30,11 +30,9 @@ export default function Home() {
           
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/events" className="bg-blue-600 text-white px-10 py-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-xl hover:-translate-y-1">
-              Find an Event
+              Find all Events
             </Link>
-            <Link href="/register" className="bg-white text-gray-900 border-2 border-gray-200 px-10 py-4 rounded-xl font-bold hover:border-blue-600 hover:text-blue-600 transition">
-              Host an Event
-            </Link>
+
           </div>
         </div>
       </section>

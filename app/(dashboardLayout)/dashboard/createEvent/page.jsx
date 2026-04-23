@@ -2,19 +2,31 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react"; // 1. Import the hook
 import { createEventDirectly } from "../../../actions/eventActions";
 
 export default function CreateEvent() {
     const router = useRouter();
+    const { data: session } = useSession(); // 2. Access the session
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // 3. Check if user is actually logged in before proceeding
+        if (!session?.user?.id) {
+            alert("User session not found. Please log in.");
+            return;
+        }
+
         setLoading(true);
 
         const formData = new FormData(e.target);
-        
-        // Call the Server Action directly
+
+        // 4. Manually append the userId to the formData
+        formData.append("userId", session.user.id);
+
+        // Call the Server Action
         const result = await createEventDirectly(formData);
 
         if (result.success) {
@@ -23,13 +35,13 @@ export default function CreateEvent() {
         } else {
             alert("Error: " + result.error);
         }
-        
+
         setLoading(false);
     };
 
     return (
 
-        
+
 
         <div className="max-w-4xl mx-auto">
             <div className="mb-8">

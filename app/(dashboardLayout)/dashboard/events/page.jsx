@@ -1,27 +1,32 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { getEvents } from "@/app/actions/eventActions"; // Import your action
-import { deleteEvent } from "../../../actions/eventActions";
+import { useSession } from "next-auth/react"; // 1. Import useSession
+import { getEvents, deleteEvent } from "@/app/actions/eventActions";
 
 export default function MyEvents() {
+  const { data: session, status } = useSession(); // 2. Get session
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch data on component mount
   useEffect(() => {
     async function loadEvents() {
-      const result = await getEvents();
-      if (result.success) {
-        setEvents(result.data);
-      } else {
-        console.error(result.error);
+      // 3. Only fetch if the session is authenticated and we have an ID
+      if (status === "authenticated" && session?.user?.id) {
+        const result = await getEvents(session.user.id); // Pass ID to action
+        if (result.success) {
+          setEvents(result.data);
+        } else {
+          console.error(result.error);
+        }
+        setLoading(false);
+      } else if (status === "unauthenticated") {
+        setLoading(false);
       }
-      setLoading(false);
     }
     loadEvents();
-  }, []);
+  }, [status, session]); // Dependency on session status
+
 
   // 2. Handle Delete Function
   const handleDelete = async (id) => {
@@ -39,12 +44,16 @@ export default function MyEvents() {
     }
   };
 
-  if (loading) {
+  if (loading || status === "loading") {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <span className="loading loading-spinner loading-lg text-primary"></span>
       </div>
     );
+  }
+
+  if (status === "unauthenticated") {
+    return <div className="p-10 text-center">Please log in to view your events.</div>;
   }
 
   return (

@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS events (
   location VARCHAR(255) NOT NULL,
   price DECIMAL(10, 2) DEFAULT 0.00,
   category VARCHAR(100),
+  user_id VARCHAR(255),
   status ENUM('pending', 'approved', 'cancelled') DEFAULT 'approved',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
