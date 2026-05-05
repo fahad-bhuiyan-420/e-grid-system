@@ -3,12 +3,9 @@
 import { pool } from "@/app/lib/db";
 import { revalidatePath } from "next/cache";
 
-
 export async function createEventDirectly(formData) {
   try {
-    // 1. Get the userId from the formData object
     const userId = formData.get("userId");
-
     const title = formData.get("title");
     const description = formData.get("description");
     const time = formData.get("time");
@@ -16,26 +13,47 @@ export async function createEventDirectly(formData) {
     const price = parseFloat(formData.get("price")) || 0;
     const category = formData.get("category");
 
-    // 2. Validation check
     if (!userId) {
       return { success: false, error: "Missing User ID. Submission blocked." };
     }
 
-    // 3. Execute SQL
-    const query = `
-            INSERT INTO events (title, description, event_time, location, price, category, status, user_id)
-            VALUES (?, ?, ?, ?, ?, ?, 'approved', ?)
-        `;
+    // 1. Insert the Event
+    const eventQuery = `
+      INSERT INTO events (title, description, event_time, location, price, category, status, user_id)
+      VALUES (?, ?, ?, ?, ?, ?, 'approved', ?)
+    `;
 
-    await pool.execute(query, [
+    const [eventResult] = await pool.execute(eventQuery, [
       title,
       description,
       time,
       location,
       price,
       category,
-      userId // This is the ID passed from the frontend
+      userId
     ]);
+
+    // 2. Get the newly created Event ID
+    const newEventId = eventResult.insertId;
+
+    // 3. Create 10 tickets for this event
+    // We prepare a bulk insert query for performance
+    const ticketValues = [];
+    const placeholders = [];
+    
+    for (let i = 0; i < 10; i++) {
+      // Each ticket row: purchase_status, quantity, purchase_date, event_id, participant_id
+      // Note: ticket_id is usually an AUTO_INCREMENT primary key in SQL
+      placeholders.push("(?, ?, NOW(), ?, ?)");
+      ticketValues.push("available", 1, newEventId, userId);
+    }
+
+    const ticketQuery = `
+      INSERT INTO tickets (purchase_status, quantity, purchase_date, event_id, participant_id)
+      VALUES ${placeholders.join(", ")}
+    `;
+
+    await pool.execute(ticketQuery, ticketValues);
 
     revalidatePath("/dashboard/events");
     return { success: true };
@@ -95,11 +113,21 @@ export async function getAllEvents(searchQuery = "") {
   }
 }
 
-// Add this to your existing eventActions.js
+// Inside eventActions.js
 export async function deleteEvent(id, userId) {
   try {
+    // Check for undefined to prevent SQL driver errors
+    if (!id || !userId) {
+      throw new Error("Missing Event ID or User ID");
+    }
+
     const query = "DELETE FROM events WHERE id = ? AND user_id = ?";
-    await pool.execute(query, [id, userId]);
+    const [result] = await pool.execute(query, [id, userId]);
+
+    if (result.affectedRows === 0) {
+      return { success: false, error: "Event not found or unauthorized." };
+    }
+
     revalidatePath("/dashboard/events");
     return { success: true };
   } catch (error) {
@@ -107,3 +135,4 @@ export async function deleteEvent(id, userId) {
     return { success: false, error: error.message };
   }
 }
+

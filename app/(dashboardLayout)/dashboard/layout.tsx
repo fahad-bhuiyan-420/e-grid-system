@@ -34,6 +34,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <li className="mb-4 text-xl font-black text-blue-600 px-4">E-GRID</li>
           <li><Link href="/">Homepage</Link></li>
           <li><Link href="/dashboard">Dashboard Home</Link></li>
+          <li><Link href="/purchasedTickets">Purchased tickets</Link></li>
 
 
           {session?.user?.role === "organizer" && (
@@ -55,7 +56,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           }
 
-          <li><a>Settings</a></li>
+          
         </ul>
       </div>
     </div>

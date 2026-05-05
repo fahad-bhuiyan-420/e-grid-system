@@ -28,21 +28,28 @@ export default function MyEvents() {
   }, [status, session]); // Dependency on session status
 
 
-  // 2. Handle Delete Function
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this event?")) return;
+// Inside MyEvents.js
+const handleDelete = async (id) => {
+  if (!confirm("Are you sure you want to delete this event?")) return;
 
-    // Optional: Optimistic UI update (remove from state immediately)
-    const originalEvents = [...events];
-    setEvents(events.filter(event => event.id !== id));
+  // 1. Safety Check: Make sure we have a user ID
+  if (!session?.user?.id) {
+    alert("Error: User session not found. Please log in again.");
+    return;
+  }
 
-    const result = await deleteEvent(id);
+  // Optional: Optimistic UI update
+  const originalEvents = [...events];
+  setEvents(events.filter(event => event.id !== id));
 
-    if (!result.success) {
-      alert("Failed to delete: " + result.error);
-      setEvents(originalEvents); // Rollback if error
-    }
-  };
+  // 2. Pass BOTH the event id and the user id
+  const result = await deleteEvent(id, session.user.id);
+
+  if (!result.success) {
+    alert("Failed to delete: " + result.error);
+    setEvents(originalEvents); // Rollback
+  }
+};
 
   if (loading || status === "loading") {
     return (
